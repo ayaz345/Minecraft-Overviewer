@@ -184,8 +184,7 @@ class MultiprocessingDispatcherManager(multiprocessing.managers.BaseManager):
     @classmethod
     def from_address(cls, address, authkey, serializer):
         "Required to be implemented to make multiprocessing happy"
-        c = cls(address=address, authkey=authkey)
-        return c
+        return cls(address=address, authkey=authkey)
 
     def set_tilesets(self, tilesets):
         """This is used in MultiprocessingDispatcher.setup_tilesets to
@@ -298,7 +297,7 @@ class MultiprocessingDispatcher(Dispatcher):
 
         # create and fill the pool
         self.pool = []
-        for i in range(self.local_procs):
+        for _ in range(self.local_procs):
             proc = MultiprocessingDispatcherProcess(self.manager)
             proc.start()
             self.pool.append(proc)
@@ -310,7 +309,7 @@ class MultiprocessingDispatcher(Dispatcher):
             self._handle_messages()
 
         # send of the end-of-jobs sentinel
-        for p in range(self.num_workers):
+        for _ in range(self.num_workers):
             self.job_queue.put(None, False)
 
         # TODO better way to be sure worker processes get the message

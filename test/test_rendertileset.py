@@ -162,10 +162,7 @@ class RendertileSetTest(unittest.TestCase):
 
     def test_query_level(self):
         "Tests querying at a level other than max"
-        # level 2
-        l2 = set()
-        for p in self.tile_paths:
-            l2.add(p[0:2])
+        l2 = {p[:2] for p in self.tile_paths}
         for path in iterate_base4(2):
             if path in l2:
                 self.assertTrue( self.tree.query_path(path) )
@@ -180,23 +177,17 @@ class RendertileSetTest(unittest.TestCase):
 
     def test_iterate_level(self):
         """Test iterating at a level other than max"""
-        # level 2
-        l2 = set()
-        for p in self.tile_paths:
-            l2.add(p[0:2])
+        l2 = {p[:2] for p in self.tile_paths}
         for p in self.tree.iterate(2):
-            self.assertTrue(p in l2, "%s was not supposed to be returned!" % (p,))
+            self.assertTrue(p in l2, f"{p} was not supposed to be returned!")
             l2.remove(p)
-        self.assertEqual(len(l2), 0, "Never iterated over these items: %s" % l2)
+        self.assertEqual(len(l2), 0, f"Never iterated over these items: {l2}")
 
-        # level 1
-        l1 = set()
-        for p in self.tile_paths:
-            l1.add(p[0:1])
+        l1 = {p[:1] for p in self.tile_paths}
         for p in self.tree.iterate(1):
-            self.assertTrue(p in l1, "%s was not supposed to be returned!" % (p,))
+            self.assertTrue(p in l1, f"{p} was not supposed to be returned!")
             l1.remove(p)
-        self.assertEqual(len(l1), 0, "Never iterated over these items: %s" % l1)
+        self.assertEqual(len(l1), 0, f"Never iterated over these items: {l1}")
 
     def test_posttraverse(self):
         """Test a post-traversal of the tree's dirty tiles"""

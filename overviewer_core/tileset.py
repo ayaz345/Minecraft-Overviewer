@@ -491,11 +491,11 @@ class TileSet(object):
                     rt = RenderTile.from_path(tilepath)
                     imgpath = rt.get_filepath(self.outputdir, self.imgextension)
                 elif len(tilepath) == 0:
-                    imgpath = os.path.join(self.outputdir, "base." + self.imgextension)
+                    imgpath = os.path.join(self.outputdir, f"base.{self.imgextension}")
                 else:
                     dest = os.path.join(self.outputdir, *(str(x) for x in tilepath[:-1]))
                     name = str(tilepath[-1])
-                    imgpath = os.path.join(dest, name) + "." + self.imgextension
+                    imgpath = f"{os.path.join(dest, name)}.{self.imgextension}"
                 # We use low-level file output because we don't want open file
                 # handles being passed to subprocesses. fd is just an integer.
                 # This method is only called from the master process anyways.
@@ -580,9 +580,10 @@ class TileSet(object):
 
         """
         def bgcolorformat(color):
-            return "#%02x%02x%02x" % color[0:3]
+            return "#%02x%02x%02x" % color[:3]
+
         isOverlay = self.options.get("overlay") or \
-            (not any(isinstance(x, rendermodes.Base) for x in self.options.get("rendermode")))
+                (not any(isinstance(x, rendermodes.Base) for x in self.options.get("rendermode")))
 
         # don't update last render time if we're leaving this alone
         last_rendertime = self.last_rendertime
@@ -618,13 +619,13 @@ class TileSet(object):
         d['defaultZoom'] = max(d['minZoom'], min(d['defaultZoom'], d['maxZoom']))
 
         if isOverlay:
-            d.update({"tilesets": self.options.get("overlay")})
+            d["tilesets"] = self.options.get("overlay")
 
         # None means overworld
         if (self.regionset.get_type() is None and self.options.get("showspawn", True)):
-            d.update({"spawn": self.options.get("spawn")})
+            d["spawn"] = self.options.get("spawn")
         else:
-            d.update({"spawn": False})
+            d["spawn"] = False
 
         try:
             d['north_direction'] = self.regionset.north_dir
@@ -728,7 +729,7 @@ class TileSet(object):
         # then all that needs to be done is to regenerate the new top level
 
         def rollback_mkdir(dnum):
-            p = getpath("new" + str(dnum))
+            p = getpath(f"new{str(dnum)}")
             if os.path.exists(p):
                 os.rmdir(p)
 
@@ -743,16 +744,16 @@ class TileSet(object):
                 os.rename(qdir, getpath(str(dnum)))
 
         def rollback_dirrename(dnum):
-            os.rename(getpath(str(dnum)), getpath("new" + str(dnum)))
+            os.rename(getpath(str(dnum)), getpath(f"new{str(dnum)}"))
 
         for dirnum in range(4):
             newnum = (3, 2, 1, 0)[dirnum]
 
-            newdir = "new" + str(dirnum)
+            newdir = f"new{str(dirnum)}"
             newdirpath = getpath(newdir)
 
-            files = [str(dirnum) + "." + self.imgextension, str(dirnum)]
-            newfiles = [str(newnum) + "." + self.imgextension, str(newnum)]
+            files = [f"{str(dirnum)}.{self.imgextension}", str(dirnum)]
+            newfiles = [f"{str(newnum)}.{self.imgextension}", str(newnum)]
 
             try:
                 try:
@@ -814,8 +815,9 @@ class TileSet(object):
             os.rename(getpath("new3"), getpath("3"))
 
         # Delete the files in the top directory to make sure they get re-created.
-        files = [str(num) + "." + self.imgextension for num in range(4)] + \
-            ["base." + self.imgextension]
+        files = [f"{str(num)}.{self.imgextension}" for num in range(4)] + [
+            f"base.{self.imgextension}"
+        ]
         for f in files:
             try:
                 os.unlink(getpath(f))
@@ -929,7 +931,7 @@ class TileSet(object):
         return dirty
 
     def __str__(self):
-        return "<TileSet for %s>" % os.path.basename(self.outputdir)
+        return f"<TileSet for {os.path.basename(self.outputdir)}>"
 
     def _render_compositetile(self, dest, name):
         """
@@ -940,23 +942,23 @@ class TileSet(object):
         taking tiles from os.path.join(dest, "{0,1,2,3}.png")
         """
         imgformat = self.imgextension
-        imgpath = os.path.join(dest, name) + "." + imgformat
+        imgpath = f"{os.path.join(dest, name)}.{imgformat}"
 
         if name == "base":
             # Special case for the base tile. Its children are in the same
             # directory instead of in a sub-directory
             quadPath = [
-                ((0, 0), os.path.join(dest, "0." + imgformat)),
-                ((192, 0), os.path.join(dest, "1." + imgformat)),
-                ((0, 192), os.path.join(dest, "2." + imgformat)),
-                ((192, 192), os.path.join(dest, "3." + imgformat)),
+                ((0, 0), os.path.join(dest, f"0.{imgformat}")),
+                ((192, 0), os.path.join(dest, f"1.{imgformat}")),
+                ((0, 192), os.path.join(dest, f"2.{imgformat}")),
+                ((192, 192), os.path.join(dest, f"3.{imgformat}")),
             ]
         else:
             quadPath = [
-                ((0, 0), os.path.join(dest, name, "0." + imgformat)),
-                ((192, 0), os.path.join(dest, name, "1." + imgformat)),
-                ((0, 192), os.path.join(dest, name, "2." + imgformat)),
-                ((192, 192), os.path.join(dest, name, "3." + imgformat)),
+                ((0, 0), os.path.join(dest, name, f"0.{imgformat}")),
+                ((192, 0), os.path.join(dest, name, f"1.{imgformat}")),
+                ((0, 192), os.path.join(dest, name, f"2.{imgformat}")),
+                ((192, 192), os.path.join(dest, name, f"3.{imgformat}")),
             ]
 
         # Check each of the 4 child tiles, getting their existance and mtime
@@ -997,7 +999,7 @@ class TileSet(object):
             try:
                 src = Image.open(path[1])
                 # optimizeimg may have converted them to a palette image in the meantime
-                if src.mode != "RGB" and src.mode != "RGBA":
+                if src.mode not in ["RGB", "RGBA"]:
                     src = src.convert("RGBA")
                 src.load()
 
@@ -1225,7 +1227,7 @@ class TileSet(object):
                     continue
 
                 for child_path, child_mtime, child_needs_rendering in \
-                        self._iterate_and_check_tiles(childpath):
+                            self._iterate_and_check_tiles(childpath):
                     if len(child_path) == len(path) + 1:
                         # Do these checks for our immediate children
                         if child_needs_rendering:
@@ -1250,7 +1252,7 @@ class TileSet(object):
             else:
                 # Check this tile's mtime
                 imgpath = os.path.join(self.outputdir, *(str(x) for x in path))
-                imgpath += "." + self.imgextension
+                imgpath += f".{self.imgextension}"
                 logging.debug("Testing mtime for composite-tile %s", imgpath)
                 try:
                     tile_mtime = os.stat(imgpath)[stat.ST_MTIME]
@@ -1284,7 +1286,7 @@ class TileSet(object):
         else:
             # path referrs to a composite tile, and by extension a directory
             dirpath = os.path.join(self.outputdir, *(str(x) for x in path))
-            imgpath = dirpath + "." + self.imgextension
+            imgpath = f"{dirpath}.{self.imgextension}"
             if os.path.exists(imgpath):
                 logging.debug("Found an image that shouldn't exist. Deleting it: %s", imgpath)
                 os.remove(imgpath)
@@ -1332,11 +1334,7 @@ def get_tiles_by_chunk(chunkcol, chunkrow):
     tilerow = chunkrow - chunkrow % 4
 
     # If this chunk is in an /even/ column, then it spans two tiles.
-    if chunkcol % 2 == 0:
-        colrange = (tilecol - 2, tilecol)
-    else:
-        colrange = (tilecol,)
-
+    colrange = (tilecol - 2, tilecol) if chunkcol % 2 == 0 else (tilecol, )
     # If this chunk is in a row divisible by 4, then it touches the
     # tile above it as well. Also touches the next 6 tiles down (24
     # rows)
@@ -1529,9 +1527,9 @@ class RendertileSet(object):
         """
         if level is None:
             todepth = 1
+        elif level <= 0 or level > self.depth:
+            raise ValueError(f"Level parameter must be between 1 and {self.depth}")
         else:
-            if not (level > 0 and level <= self.depth):
-                raise ValueError("Level parameter must be between 1 and %s" % self.depth)
             todepth = self.depth - level + 1
 
         return (tuple(path) for path in self._iterate_helper([], self.children, self.depth,
@@ -1570,15 +1568,17 @@ class RendertileSet(object):
             for (childnum_, child), childoffset_ in distance_sort(enumerate(children_list), offset):
                 if child:
                     def go(childnum, childoffset):
-                        for p in self._iterate_helper(path + [childnum], children_list[childnum],
-                                                      depth - 1, onlydepth=onlydepth,
-                                                      offset=childoffset):
-                            yield p
+                        yield from self._iterate_helper(
+                            path + [childnum],
+                            children_list[childnum],
+                            depth - 1,
+                            onlydepth=onlydepth,
+                            offset=childoffset,
+                        )
+
                     gens.append(go(childnum_, childoffset_))
 
-            for p in roundrobin(gens) if robin else chain(*gens):
-                yield p
-
+            yield from roundrobin(gens) if robin else chain(*gens)
         if onlydepth is None and any(children_list):
             yield path
 
@@ -1700,8 +1700,7 @@ class RenderTile(object):
         pathcomponents = [tiledir]
         pathcomponents.extend(str(x) for x in self.path)
         path = os.path.sep.join(pathcomponents)
-        imgpath = ".".join((path, imgformat))
-        return imgpath
+        return ".".join((path, imgformat))
 
     @classmethod
     def from_path(cls, path):
@@ -1750,7 +1749,7 @@ class RenderTile(object):
 
         path = []
 
-        for level in range(depth):
+        for _ in range(depth):
             # Strategy: Find the midpoint of this level, and determine which
             # quadrant this row/col is in. Then set the bounds to that level
             # and repeat
@@ -1767,14 +1766,13 @@ class RenderTile(object):
                     path.append(2)
                     colbounds[1] = xmid
                     rowbounds[0] = ymid
+            elif row < ymid:
+                path.append(1)
+                colbounds[0] = xmid
+                rowbounds[1] = ymid
             else:
-                if row < ymid:
-                    path.append(1)
-                    colbounds[0] = xmid
-                    rowbounds[1] = ymid
-                else:
-                    path.append(3)
-                    colbounds[0] = xmid
-                    rowbounds[0] = ymid
+                path.append(3)
+                colbounds[0] = xmid
+                rowbounds[0] = ymid
 
         return cls(col, row, path)

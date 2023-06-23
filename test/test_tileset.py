@@ -100,11 +100,7 @@ def create_fakedir(outputdir, tiles):
     """
     for tilepath, tilemtime in tiles.items():
         dirpath = os.path.join(outputdir, *(str(x) for x in tilepath[:-1]))
-        if len(tilepath) == 0:
-            imgname = "base.png"
-        else:
-            imgname = str(tilepath[-1]) + ".png"
-
+        imgname = "base.png" if len(tilepath) == 0 else f"{str(tilepath[-1])}.png"
         if not os.path.exists(dirpath):
             os.makedirs(dirpath)
         finalpath = os.path.join(dirpath, imgname)
@@ -149,7 +145,7 @@ class TilesetTest(unittest.TestCase):
                 'rendermode': 'normal',
                 'rerenderprob': 0
                 }
-        defoptions.update(options)
+        defoptions |= options
         ts = tileset.TileSet(None, self.rs, FakeAssetmanager(0), None, defoptions, outputdir)
         if preprocess:
             preprocess(ts)
@@ -165,18 +161,24 @@ class TilesetTest(unittest.TestCase):
         parent tiles, and compares that to the output of ts.iterate_work_items().
 
         """
-        paths = set(x[0] for x in ts.iterate_work_items(0))
+        paths = {x[0] for x in ts.iterate_work_items(0)}
 
         # Get what tiles we expect to be returned
         expected = get_tile_set(chunks)
 
         # Check that all paths returned are in the expected list
         for tilepath in paths:
-            self.assertTrue(tilepath in expected, "%s was not expected to be returned. Expected %s" % (tilepath, expected))
+            self.assertTrue(
+                tilepath in expected,
+                f"{tilepath} was not expected to be returned. Expected {expected}",
+            )
 
         # Now check that all expected tiles were indeed returned
         for tilepath in expected.keys():
-            self.assertTrue(tilepath in paths, "%s was expected to be returned but wasn't: %s" % (tilepath, paths))
+            self.assertTrue(
+                tilepath in paths,
+                f"{tilepath} was expected to be returned but wasn't: {paths}",
+            )
 
     def test_get_phase_length(self):
         ts = self.get_tileset({'renderchecks': 2}, self.get_outputdir())
@@ -217,9 +219,7 @@ class TilesetTest(unittest.TestCase):
         # Pick 3 random chunks to update
         chunks = list(self.rs.chunks.keys())
         self.r.shuffle(chunks)
-        updated_chunks = {}
-        for key in chunks[:3]:
-            updated_chunks[key] = 6
+        updated_chunks = {key: 6 for key in chunks[:3]}
         self.rs.chunks.update(updated_chunks)
         ts = self.get_tileset({'renderchecks': 0}, self.get_outputdir(),
                 lambda ts: setattr(ts, 'last_rendertime', 5))
@@ -261,17 +261,23 @@ class TilesetTest(unittest.TestCase):
         outputdir = self.get_outputdir()
         # Fill the output dir with tiles
         all_tiles = get_tile_set(self.rs.chunks)
-        all_tiles.update(dict((x,3) for x in outdated_tiles))
+        all_tiles.update({x: 3 for x in outdated_tiles})
         create_fakedir(outputdir, all_tiles)
 
         # Create the tileset and do the scan
         ts = self.get_tileset({'renderchecks': 1}, outputdir)
 
         # Now see if it's right
-        paths = set(x[0] for x in ts.iterate_work_items(0))
+        paths = {x[0] for x in ts.iterate_work_items(0)}
         expected = set(outdated_tiles) | set(additional)
         for tilepath in paths:
-            self.assertTrue(tilepath in expected, "%s was not expected to be returned. Expected %s" % (tilepath, expected))
+            self.assertTrue(
+                tilepath in expected,
+                f"{tilepath} was not expected to be returned. Expected {expected}",
+            )
 
         for tilepath in expected:
-            self.assertTrue(tilepath in paths, "%s was expected to be returned but wasn't: %s" % (tilepath, paths))
+            self.assertTrue(
+                tilepath in paths,
+                f"{tilepath} was expected to be returned but wasn't: {paths}",
+            )

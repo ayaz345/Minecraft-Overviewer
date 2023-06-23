@@ -77,11 +77,7 @@ class WindowsOutputStream(object):
             self.currentForeground = Fore
         if Back is not None:
             self.currentBackground = Back
-        if Bold:
-            self.currentBold = FOREGROUND_BOLD
-        else:
-            self.currentBold = 0
-
+        self.currentBold = FOREGROUND_BOLD if Bold else 0
         self.SetConsoleTextAttribute(
             self.output_handle,
             ctypes.c_int(self.currentForeground | self.currentBackground | self.currentBold))
@@ -90,7 +86,7 @@ class WindowsOutputStream(object):
 
         msg_strm = StringIO(s)
 
-        while (True):
+        while True:
             c = msg_strm.read(1)
             if c == '':
                 break
@@ -112,7 +108,7 @@ class WindowsOutputStream(object):
                         color += nc
                     color = int(color)
                     if (color >= 40):       # background
-                        color = color - 40
+                        color -= 40
                         if color == BLACK:
                             self.updateWinColor(Back=BACKGROUND_BLACK)
                         if color == RED:
@@ -131,7 +127,7 @@ class WindowsOutputStream(object):
                             self.updateWinColor(Back=BACKGROUND_RED | BACKGROUND_GREEN |
                                                 BACKGROUND_BLUE)
                     elif (color >= 30):     # foreground
-                        color = color - 30
+                        color -= 30
                         if color == BLACK:
                             self.updateWinColor(Fore=FOREGROUND_BLACK)
                         if color == RED:
@@ -148,8 +144,6 @@ class WindowsOutputStream(object):
                             self.updateWinColor(Fore=FOREGROUND_GREEN | FOREGROUND_BLUE)
                         elif color == WHITE:
                             self.updateWinColor(Fore=FOREGROUND_WHITE)
-                elif c2 == "1m":    # BOLD_SEQ
-                    pass
             else:
                 self.stream.write(c)
 
@@ -188,16 +182,16 @@ class HighlightingFormatter(logging.Formatter):
 
         """
 
-        record.shortlevelname = record.levelname[0] + ' '
+        record.shortlevelname = f'{record.levelname[0]} '
         if record.levelname == 'INFO':
             record.shortlevelname = ''
 
         record.pid = os.getpid()
-        record.fileandlineno = "%s:%s" % (record.filename, record.lineno)
+        record.fileandlineno = f"{record.filename}:{record.lineno}"
 
         # Set the max length for the funcName field, and left justify
         l = self.funcName_len
-        record.funcName = ("%-" + str(l) + 's') % record.funcName[:l]
+        record.funcName = f"%-{str(l)}s" % record.funcName[:l]
 
         return self.highlight(record)
 
@@ -219,12 +213,11 @@ class DumbFormatter(HighlightingFormatter):
 
     """
     def highlight(self, record):
-        if record.levelname in HIGHLIGHT:
-            line = logging.Formatter.format(self, record)
-            line = "*" * min(79, len(line)) + "\n" + line
-            return line
-        else:
+        if record.levelname not in HIGHLIGHT:
             return HighlightingFormatter.highlight(self, record)
+        line = logging.Formatter.format(self, record)
+        line = "*" * min(79, len(line)) + "\n" + line
+        return line
 
 
 class ANSIColorFormatter(HighlightingFormatter):
@@ -287,15 +280,13 @@ def configure(loglevel=logging.INFO, verbose=False, simple=False):
         # we have already set up logging so just replace the formatter
         # this time with the new values
         logger.overviewerHandler.setFormatter(formatter)
-        logger.setLevel(loglevel)
-
     else:
         # Save our handler here so we can tell which handler was ours if the
         # function is called again
         logger.overviewerHandler = logging.StreamHandler(outstream)
         logger.overviewerHandler.setFormatter(formatter)
         logger.addHandler(logger.overviewerHandler)
-        logger.setLevel(loglevel)
+    logger.setLevel(loglevel)
 
     # Make sure Pillow doesn't spam us in verbose mode
     logging.getLogger("PIL").setLevel(logging.WARNING)

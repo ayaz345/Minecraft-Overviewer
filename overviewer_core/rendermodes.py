@@ -30,16 +30,16 @@ class RenderPrimitive(object):
     def __init__(self, **kwargs):
         if self.name is None:
             raise RuntimeError("RenderPrimitive cannot be used directly")
-        
+
         self.option_values = {}
         for key, val in kwargs.items():
-            if not key in self.options:
+            if key not in self.options:
                 raise ValueError("primitive `{0}' has no option `{1}'".format(self.name, key))
             self.option_values[key] = val
-        
+
         # set up defaults
         for name, (description, default) in self.options.items():
-            if not name in self.option_values:
+            if name not in self.option_values:
                 self.option_values[name] = default
 
 class Base(RenderPrimitive):
@@ -130,36 +130,35 @@ class Lighting(RenderPrimitive):
 
     @property
     def facemasks(self):
-        facemasks = getattr(self, "_facemasks", None)
-        if facemasks:
+        if facemasks := getattr(self, "_facemasks", None):
             return facemasks
-        
+
         white = Image.new("L", (24,24), 255)
-        
+
         top = Image.new("L", (24,24), 0)
         left = Image.new("L", (24,24), 0)
         whole = Image.new("L", (24,24), 0)
-        
+
         toppart = textures.Textures.transform_image_top(white)
         leftpart = textures.Textures.transform_image_side(white)
-        
+
         # using the real PIL paste here (not alpha_over) because there is
         # no alpha channel (and it's mode "L")
         top.paste(toppart, (0,0))
         left.paste(leftpart, (0,6))
         right = left.transpose(Image.FLIP_LEFT_RIGHT)
-        
+
         # Manually touch up 6 pixels that leave a gap, like in
         # textures._build_block()
         for x,y in [(13,23), (17,21), (21,19)]:
             right.putpixel((x,y), 255)
         for x,y in [(3,4), (7,2), (11,0)]:
             top.putpixel((x,y), 255)
-    
+
         # special fix for chunk boundary stipple
         for x,y in [(13,11), (17,9), (21,7)]:
             right.putpixel((x,y), 0)
-        
+
         self._facemasks = (top, left, right)
         return self._facemasks
 
@@ -178,8 +177,7 @@ class Overlay(RenderPrimitive):
 
     @property
     def whitecolor(self):
-        whitecolor = getattr(self, "_whitecolor", None)
-        if whitecolor:
+        if whitecolor := getattr(self, "_whitecolor", None):
             return whitecolor
         white = Image.new("RGBA", (24,24), (255, 255, 255, 255))
         self._whitecolor = white
@@ -187,10 +185,9 @@ class Overlay(RenderPrimitive):
     
     @property
     def facemask_top(self):
-        facemask_top = getattr(self, "_facemask_top", None)
-        if facemask_top:
+        if facemask_top := getattr(self, "_facemask_top", None):
             return facemask_top
-        
+
         white = Image.new("L", (24,24), 255)
         top = Image.new("L", (24,24), 0)
         toppart = textures.Textures.transform_image_top(white)

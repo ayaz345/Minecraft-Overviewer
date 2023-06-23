@@ -131,12 +131,11 @@ def parseBucketChunks(task_tuple):
         try:
             data = rset.get_chunk(b[0], b[1])
             for poi in itertools.chain(data.get('TileEntities', []), data.get('Entities', []), data.get('block_entities', [])):
-                if poi['id'] == 'Sign' or poi['id'] == 'minecraft:sign':
+                if poi['id'] in ['Sign', 'minecraft:sign']:
                     poi = signWrangler(poi)
                 for name, filter_function in filters:
                     ff = bucketChunkFuncs[filter_function]
-                    result = ff(poi)
-                    if result:
+                    if result := ff(poi):
                         d = create_marker_from_filter_result(poi, result)
                         markers[name].append(d)
         except nbt.CorruptChunkError:
@@ -184,11 +183,10 @@ def handleEntities(rset, config, config_path, filters, markers):
             try:
                 data = rset.get_chunk(x, z)
                 for poi in itertools.chain(data.get('TileEntities', []), data.get('Entities', []), data.get('block_entities', [])):
-                    if poi['id'] == 'Sign' or poi['id'] == 'minecraft:sign':    # kill me
+                    if poi['id'] in ['Sign', 'minecraft:sign']:    # kill me
                         poi = signWrangler(poi)
                     for name, __, filter_function, __, __, __ in filters:
-                        result = filter_function(poi)
-                        if result:
+                        if result := filter_function(poi):
                             d = create_marker_from_filter_result(poi, result)
                             markers[name]['raw'].append(d)
             except nbt.CorruptChunkError:
@@ -198,7 +196,7 @@ def handleEntities(rset, config, config_path, filters, markers):
                 # placeholder ones. It's okay for this chunk to not exist.
                 pass
     else:
-        buckets = [[] for i in range(numbuckets)]
+        buckets = [[] for _ in range(numbuckets)]
 
         for (x, z, mtime) in rset.iterate_chunks():
             i = x // 32 + z // 32
@@ -245,7 +243,9 @@ class PlayerDict(dict):
             except (ValueError, IOError, EOFError):
                 logging.warning("Failed to load UUID cache -- it might be corrupt.")
                 cls.uuid_cache = {}
-                corrupted_cache = cache_file + ".corrupted." + datetime.datetime.now().isoformat()
+                corrupted_cache = (
+                    f"{cache_file}.corrupted.{datetime.datetime.now().isoformat()}"
+                )
                 try:
                     os.rename(cache_file, corrupted_cache)
                     logging.warning("If %s does not appear to contain meaningful data, you may "
@@ -284,7 +284,7 @@ class PlayerDict(dict):
             profile = PlayerDict.uuid_cache[sname]
             if profile['retrievedAt'] > time.mktime(self['time']):
                 return profile['name']
-        except (KeyError,):
+        except KeyError:
             pass
 
         try:
@@ -364,7 +364,7 @@ def handlePlayers(worldpath, filters, markers):
             # different regionsets.
 
             if rset.get_type():
-                dimension = int(re.match(r"^DIM(_MYST)?(-?\d+)$", rset.get_type()).group(2))
+                dimension = int(re.match(r"^DIM(_MYST)?(-?\d+)$", rset.get_type())[2])
             else:
                 dimension = 0
             dimension = DIMENSION_INT_TO_STR.get(dimension, "minecraft:overworld")
@@ -374,14 +374,12 @@ def handlePlayers(worldpath, filters, markers):
                 read_dim = DIMENSION_INT_TO_STR.get(read_dim, "minecraft:overworld")
 
             if read_dim == dimension:
-                result = filter_function(data)
-                if result:
+                if result := filter_function(data):
                     d = create_marker_from_filter_result(data, result)
                     markers[name]['raw'].append(d)
 
             if dimension == "minecraft:overworld" and "SpawnX" in data:
-                result = filter_function(spawn)
-                if result:
+                if result := filter_function(spawn):
                     d = create_marker_from_filter_result(spawn, result)
                     markers[name]['raw'].append(d)
 
@@ -395,8 +393,7 @@ def handleManual(manualpois, filters, markers):
     """
     for poi in manualpois:
         for name, __, filter_function, __, __, __ in filters:
-            result = filter_function(poi)
-            if result:
+            if result := filter_function(poi):
                 d = create_marker_from_filter_result(poi, result)
                 markers[name]['raw'].append(d)
 
@@ -409,9 +406,9 @@ def create_marker_from_filter_result(poi, result):
     # every marker has a position either directly via attributes x, y, z or
     # via tuple attribute Pos
     if 'Pos' in poi:
-        d = dict((v, poi['Pos'][i]) for i, v in enumerate('xyz'))
+        d = {v: poi['Pos'][i] for i, v in enumerate('xyz')}
     else:
-        d = dict((v, poi[v]) for v in 'xyz')
+        d = {v: poi[v] for v in 'xyz'}
 
     # read some Defaults from POI
     if "icon" in poi:
@@ -421,10 +418,9 @@ def create_marker_from_filter_result(poi, result):
 
     # Fill in the rest from result
     if isinstance(result, str):
-        d.update(dict(text=result, hovertext=result))
+        d |= dict(text=result, hovertext=result)
     elif isinstance(result, tuple):
-        d.update(dict(text=result[1], hovertext=result[0]))
-    # Dict support to allow more flexible things in the future as well as polylines on the map.
+        d |= dict(text=result[1], hovertext=result[0])
     elif isinstance(result, dict):
         if 'text' in result:
             d['text'] = result['text']
@@ -451,23 +447,13 @@ def create_marker_from_filter_result(poi, result):
                 d['points'].append(dict(x=point['x'], y=point['y'], z=point['z']))
 
             # Options and default values
-            if 'color' in result:
-                d['strokeColor'] = result['color']
-            else:
-                d['strokeColor'] = 'red'
-
-            if 'fill' in result:
-                d['fill'] = result['fill']
-            else:
-                d['fill'] = not d['isLine']     # fill polygons by default
-
-            if 'weight' in result:
-                d['strokeWeight'] = result['weight']
-            else:
-                d['strokeWeight'] = 2
+            d['strokeColor'] = result['color'] if 'color' in result else 'red'
+            d['fill'] = result['fill'] if 'fill' in result else not d['isLine']
+            d['strokeWeight'] = result['weight'] if 'weight' in result else 2
     else:
-        raise ValueError("Got an %s as result for POI with id %s"
-                         % (type(result).__name__, poi['id']))
+        raise ValueError(
+            f"Got an {type(result).__name__} as result for POI with id {poi['id']}"
+        )
 
     return d
 
@@ -476,7 +462,7 @@ def main():
     if os.path.basename(sys.argv[0]) == "genPOI.py":
         prog_name = "genPOI.py"
     else:
-        prog_name = sys.argv[0] + " --genpoi"
+        prog_name = f"{sys.argv[0]} --genpoi"
     logger.configure()
 
     parser = ArgumentParser(prog=prog_name)
@@ -575,8 +561,10 @@ def main():
             marker_groups[rname].append(group)
 
     # initialize the structure for the markers
-    markers = dict((name, dict(created=False, raw=[], name=filter_name))
-                   for name, filter_name, __, __, __, __ in filters)
+    markers = {
+        name: dict(created=False, raw=[], name=filter_name)
+        for name, filter_name, __, __, __, __ in filters
+    }
 
     all_rsets = set(map(lambda f: f[3], filters))
     logging.info("Will search %s region sets using %s filters", len(all_rsets), len(filters))
@@ -605,6 +593,7 @@ def main():
     # the current render should be used on the current render's manualpois
     def keyfunc(x):
         return x[5]
+
     sfilters = sorted(filters, key=keyfunc)
     for rname, rname_filters in itertools.groupby(sfilters, keyfunc):
         manualpois = config['renders'][rname]['manualpois']

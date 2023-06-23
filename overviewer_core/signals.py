@@ -38,7 +38,7 @@ class Signal(object):
 
         self.namespace = namespace
         self.name = name
-        self.fullname = namespace + '.' + name
+        self.fullname = f'{namespace}.{name}'
         self.interceptor = None
         self.local_functions = []
         self.functions = []

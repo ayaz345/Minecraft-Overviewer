@@ -364,7 +364,4 @@ items = {
 }
 
 def id2item(item_id):
-    if item_id in items:
-        return items[item_id]
-    else:
-        return item_id
+    return items[item_id] if item_id in items else item_id

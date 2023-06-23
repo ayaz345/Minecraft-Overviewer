@@ -106,9 +106,8 @@ class MultiWorldParser:
             for l in formatted_lines:
                 if print_rest:
                     lines.append(l)
-                else:
-                    if "execfile" in l:
-                        print_rest = True
+                elif "execfile" in l:
+                    print_rest = True
             # on windows, our traceback as no 'execfile'.  in this case, print everything
             if print_rest:
                 logging.error("Partial traceback:\n" + "\n".join(lines))
@@ -136,8 +135,5 @@ class MultiWorldParser:
         # routine right here, right now. I hope this works!
         validator = settingsValidators.make_configDictValidator(self._settings,
                                                                 ignore_undefined=True)
-        # Woah. What just happened? No. WAIT, WHAT ARE YOU...
-        validated_config = validator(self._config_state)
-        # WHAT HAVE YOU DONE?
-        return validated_config
+        return validator(self._config_state)
         # WHAT HAVE YOU DOOOOOOOOOOONE????

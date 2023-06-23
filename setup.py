@@ -38,18 +38,12 @@ try:
 except ImportError:
     py2app = None
 
-# make sure our current working directory is the same directory
-# setup.py is in
-curdir = os.path.split(sys.argv[0])[0]
-if curdir:
+if curdir := os.path.split(sys.argv[0])[0]:
     os.chdir(curdir)
 
 # now, setup the keyword arguments for setup
 # (because we don't know until runtime if py2exe/py2app is available)
-setup_kwargs = {}
-setup_kwargs['ext_modules'] = []
-setup_kwargs['cmdclass'] = {}
-setup_kwargs['options'] = {}
+setup_kwargs = {'ext_modules': [], 'cmdclass': {}, 'options': {}}
 
 #
 # metadata
@@ -98,9 +92,7 @@ def recursive_package_data(src, package_dir='overviewer_core'):
     ret = []
     for dirpath, dirnames, filenames in os.walk(full_src, topdown=False):
         current_path = os.path.relpath(dirpath, package_dir)
-        for filename in filenames:
-            ret.append(os.path.join(current_path, filename))
-
+        ret.extend(os.path.join(current_path, filename) for filename in filenames)
     return ret
 
 # Finds the system-wide path from within a venv.
@@ -111,8 +103,7 @@ def find_system_module_path():
     # https://github.com/pypa/virtualenv/blob/16.3.0/virtualenv_embedded/distutils-init.py#L5
     import opcode
 
-    system_module_path = os.path.normpath(os.path.dirname(opcode.__file__))
-    return system_module_path
+    return os.path.normpath(os.path.dirname(opcode.__file__))
 
 #
 # py2exe options
@@ -187,12 +178,14 @@ for name in glob.glob("overviewer_core/src/primitives/*.c"):
     primitives.append(name)
 
 c_overviewer_files = ['main.c', 'composite.c', 'iterate.c', 'endian.c', 'rendermodes.c', 'block_class.c']
-c_overviewer_files += ['primitives/%s.c' % (mode) for mode in primitives]
+c_overviewer_files += [f'primitives/{mode}.c' for mode in primitives]
 c_overviewer_files += ['Draw.c']
 c_overviewer_includes = ['overviewer.h', 'rendermodes.h']
 
-c_overviewer_files = ['overviewer_core/src/' + s for s in c_overviewer_files]
-c_overviewer_includes = ['overviewer_core/src/' + s for s in c_overviewer_includes]
+c_overviewer_files = [f'overviewer_core/src/{s}' for s in c_overviewer_files]
+c_overviewer_includes = [
+    f'overviewer_core/src/{s}' for s in c_overviewer_includes
+]
 
 # really ugly hack for our scuffed CI, remove this once we move
 # to something else. The problem is that virtualenv somehow
@@ -262,9 +255,8 @@ def generate_version_py():
         outstr += "BUILD_DATE=%r\n" % time.asctime()
         outstr += "BUILD_PLATFORM=%r\n" % platform.processor()
         outstr += "BUILD_OS=%r\n" % platform.platform()
-        f = open("overviewer_core/overviewer_version.py", "w")
-        f.write(outstr)
-        f.close()
+        with open("overviewer_core/overviewer_version.py", "w") as f:
+            f.write(outstr)
     except Exception:
         print("WARNING: failed to build overviewer_version file")
 
@@ -311,15 +303,12 @@ class CustomBuild(build):
 class CustomBuildExt(build_ext):
     def build_extensions(self):
         c = self.compiler.compiler_type
-        if c == "msvc":
-            # customize the build options for this compilier
-            for e in self.extensions:
+        for e in self.extensions:
+            if c == "msvc":
                 e.extra_link_args.append("/MANIFEST")
                 e.extra_link_args.append("/DWINVER=0x060")
                 e.extra_link_args.append("/D_WIN32_WINNT=0x060")
-        if c == "unix":
-            # customize the build options for this compilier
-            for e in self.extensions:
+            elif c == "unix":
                 e.extra_compile_args.append("-Wno-unused-variable") # quell some annoying warnings
                 e.extra_compile_args.append("-Wno-unused-function") # quell some annoying warnings
                 e.extra_compile_args.append("-Wdeclaration-after-statement")

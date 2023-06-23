@@ -89,5 +89,5 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
     convert(args.markers_file)
-    for line in fileinput.input(files=markers_file, inplace=1):
+    for _ in fileinput.input(files=markers_file, inplace=1):
         print(convert(s), end='')

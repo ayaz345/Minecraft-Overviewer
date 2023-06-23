@@ -42,7 +42,7 @@ top-level directory.
         """
         self.outputdir = outputdir
         self.custom_assets_dir = custom_assets_dir
-        self.renders = dict()
+        self.renders = {}
 
         self.fs_caps = get_fs_caps(self.outputdir)
 
@@ -58,14 +58,18 @@ top-level directory.
                                 "but I couldn't read it for some reason."
                                 "Continuing with a blank config")
             logging.debug(traceback.format_exc())
-            self.overviewerConfig = dict(tilesets=dict())
+            self.overviewerConfig = dict(tilesets={})
 
     def get_tileset_config(self, name):
         "Return the correct dictionary from the parsed overviewerConfig.js"
-        for conf in self.overviewerConfig['tilesets']:
-            if conf['path'] == name:
-                return conf
-        return dict()
+        return next(
+            (
+                conf
+                for conf in self.overviewerConfig['tilesets']
+                if conf['path'] == name
+            ),
+            {},
+        )
 
     def initialize(self, tilesets):
         """Similar to finalize() but calls the tilesets' get_initial_data()
@@ -92,7 +96,7 @@ top-level directory.
 
         # dictionary to hold the overviewerConfig.js settings that we will dump
         # to JSON using dumps
-        dump = dict()
+        dump = {}
         dump['CONST'] = dict(tileSize=384)
         dump['CONST']['image'] = {
             'defaultMarker':    'signpost.png',
@@ -123,7 +127,7 @@ top-level directory.
                 worlds.append(full_name)
 
         dump['worlds'] = worlds
-        dump['map'] = dict()
+        dump['map'] = {}
         dump['map']['debug'] = False
         dump['map']['cacheTag'] = str(int(time.time()))
         dump['map']['north_direction'] = 'lower-left'   # only temporary
@@ -152,9 +156,9 @@ top-level directory.
         # write out config
         jsondump = json.dumps(dump, indent=4)
         with FileReplacer(os.path.join(self.outputdir, "overviewerConfig.js"),
-                          capabilities=self.fs_caps) as tmpfile:
+                              capabilities=self.fs_caps) as tmpfile:
             with codecs.open(tmpfile, 'w', encoding='UTF-8') as f:
-                f.write("var overviewerConfig = " + jsondump + ";\n")
+                f.write(f"var overviewerConfig = {jsondump}" + ";\n")
 
         # Copy assets, modify index.html
         self.output_noconfig()
@@ -216,8 +220,7 @@ top-level directory.
         index = codecs.open(indexpath, 'r', encoding='UTF-8').read()
         index = index.replace("{title}", "Minecraft Overviewer")
         index = index.replace("{time}", time.strftime("%a, %d %b %Y %H:%M:%S %Z", time.localtime()))
-        versionstr = "%s (%s)" % (util.findGitVersion(),
-                                  util.findGitHash()[:7])
+        versionstr = f"{util.findGitVersion()} ({util.findGitHash()[:7]})"
         index = index.replace("{version}", versionstr)
 
         with FileReplacer(indexpath, capabilities=self.fs_caps) as indexpath:

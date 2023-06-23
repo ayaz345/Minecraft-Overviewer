@@ -23,8 +23,7 @@ def main(outfile):
 
     for blockid in range(textures.max_blockid):
         for data in range(textures.max_data):
-            tex = t.blockmap[blockid * textures.max_data + data]
-            if tex:
+            if tex := t.blockmap[blockid * textures.max_data + data]:
                 if blockid not in blocks:
                     blocks[blockid] = {}
                 blocks[blockid][data] = tex

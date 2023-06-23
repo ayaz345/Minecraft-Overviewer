@@ -17,9 +17,7 @@ from overviewer_core.nbt import load
 from overviewer_core import items
 
 def print_player(data, sub_entry=False):
-    indent = ""
-    if sub_entry:
-        indent = "\t"
+    indent = "\t" if sub_entry else ""
     print("%sPosition:\t%i, %i, %i\t(dim: %i)"
           % (indent, data['Pos'][0], data['Pos'][1], data['Pos'][2], data['Dimension']))
     try:
@@ -66,7 +64,7 @@ def dir_or_file(path):
 
 
 def main(path, selected_player=None):
-    print("Inspecting %s" % args.path)
+    print(f"Inspecting {args.path}")
 
     if not path.is_dir():
         load_and_output_player(args.path)
@@ -81,7 +79,7 @@ def main(path, selected_player=None):
         player_file, player = find_player_file(args.path, args.selected_player)
         load_and_output_player(player_file, player, sub_entry=True)
     except FileNotFoundError:
-        print("No %s.dat in %s" % (args.selected_player, args.path))
+        print(f"No {args.selected_player}.dat in {args.path}")
         sys.exit(1)
 
 

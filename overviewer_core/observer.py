@@ -232,11 +232,11 @@ class JSObserver(Observer):
         self.last_update_time = -1
         self._current_value = -1
         self.minrefresh = 1000 * minrefresh
-        self.json = dict()
+        self.json = {}
 
         # function to print formatted eta
         self.format = lambda seconds: '%02ih %02im %02is' % \
-            (seconds // 3600, (seconds % 3600) // 60, seconds % 60)
+                (seconds // 3600, (seconds % 3600) // 60, seconds % 60)
 
         if (not messages):
             self.messages = dict(

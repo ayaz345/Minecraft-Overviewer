@@ -43,11 +43,10 @@ def check_output(args):
 
 def clean_render(overviewerargs, verbose=False):
     tempdir = tempfile.mkdtemp('mc-overviewer-test')
-    overviewer_script = None
-    for script in overviewer_scripts:
-        if os.path.exists(script):
-            overviewer_script = script
-            break
+    overviewer_script = next(
+        (script for script in overviewer_scripts if os.path.exists(script)),
+        None,
+    )
     if overviewer_script is None:
         sys.stderr.write("could not find main overviewer script\n")
         sys.exit(1)
@@ -93,18 +92,16 @@ def get_current_commit():
 
 
 def get_current_ref():
-    branch = get_current_branch()
-    if branch:
+    if branch := get_current_branch():
         return branch
 
-    commit = get_current_commit()
-    if commit:
+    if commit := get_current_commit():
         return commit
 
 
 def get_commits(gitrange):
     gittext = check_output(split('git rev-list --reverse') + [gitrange, ])
-    return (c for c in gittext.split("\n"))
+    return iter(gittext.split("\n"))
 
 
 def set_commit(commit):
@@ -121,10 +118,7 @@ def main(args):
     if not commits:
         commits = [get_current_ref(), ]
 
-    log = None
-    if args.log:
-        log = args.log
-
+    log = args.log if args.log else None
     reset_commit = get_current_ref()
     try:
         for commit in commits:
@@ -134,7 +128,7 @@ def main(args):
             print(" -- "),
             try:
                 for i in range(args.number):
-                    sys.stdout.write(str(i + 1) + " ")
+                    sys.stdout.write(f"{str(i + 1)} ")
                     sys.stdout.flush()
                     timelist.append(clean_render(args.overviewer_args, verbose=args.verbose))
                 print("... done")

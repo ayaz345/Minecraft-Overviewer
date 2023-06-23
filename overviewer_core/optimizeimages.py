@@ -37,14 +37,13 @@ class Optimizer:
             result = [x for x in path if os.path.exists(os.path.join(x, prog))]
             return len(result) != 0
 
-        binaries = self.binarynames + [x + ".exe" for x in self.binarynames]
+        binaries = self.binarynames + [f"{x}.exe" for x in self.binarynames]
         for b in binaries:
             if (exists_in_path(b)):
                 self.binaryname = b
                 break
         else:
-            raise Exception("Optimization programs '%s' were not found!" %
-                            binaries)
+            raise Exception(f"Optimization programs '{binaries}' were not found!")
 
     def is_crusher(self):
         """Should return True if the optimization is lossless, i.e. none of the
@@ -56,7 +55,7 @@ class Optimizer:
 class NonAtomicOptimizer(Optimizer):
     def cleanup(self, img):
         os.remove(img)
-        os.rename(img + ".tmp", img)
+        os.rename(f"{img}.tmp", img)
 
     def fire_and_forget(self, args, img):
         subprocess.check_call(args)
@@ -81,16 +80,12 @@ class pngnq(NonAtomicOptimizer, PNGOptimizer):
             raise Exception("Invalid sampling value '%d' for pngnq!" %
                             sampling)
         if dither not in ["n", "f"]:
-            raise Exception("Invalid dither method '%s' for pngnq!" % dither)
+            raise Exception(f"Invalid dither method '{dither}' for pngnq!")
         self.sampling = sampling
         self.dither = dither
 
     def optimize(self, img):
-        if img.endswith(".tmp"):
-            extension = ".tmp"
-        else:
-            extension = ".png.tmp"
-
+        extension = ".tmp" if img.endswith(".tmp") else ".png.tmp"
         args = [self.binaryname, "-s", str(self.sampling), "-f", "-e",
                 extension, img]
         # Workaround for poopbuntu 12.04 which ships an old broken pngnq
@@ -113,7 +108,7 @@ class pngcrush(NonAtomicOptimizer, PNGOptimizer):
         self.brute = brute
 
     def optimize(self, img):
-        args = [self.binaryname, img, img + ".tmp"]
+        args = [self.binaryname, img, f"{img}.tmp"]
         if self.brute:  # Was the user an idiot?
             args.insert(1, "-brute")
 
@@ -171,10 +166,10 @@ class jpegoptim(Optimizer, JPEGOptimizer):
     def optimize(self, img):
         args = [self.binaryname, "-q", "-p"]
         if self.quality is not None:
-            args.append("-m" + str(self.quality))
+            args.append(f"-m{str(self.quality)}")
 
         if self.target_size is not None:
-            args.append("-S" + str(self.target_size))
+            args.append(f"-S{str(self.target_size)}")
 
         args.append(img)
 
@@ -183,10 +178,7 @@ class jpegoptim(Optimizer, JPEGOptimizer):
     def is_crusher(self):
         # Technically, optimisation is lossless if input image quality
         # is below target quality, but this is irrelevant in this case
-        if (self.quality is not None) or (self.target_size is not None):
-            return False
-        else:
-            return True
+        return self.quality is None and self.target_size is None
 
 
 class oxipng(Optimizer, PNGOptimizer):
@@ -211,9 +203,11 @@ class oxipng(Optimizer, PNGOptimizer):
 
 def optimize_image(imgpath, imgformat, optimizers):
     for opt in optimizers:
-        if imgformat == 'png':
-            if isinstance(opt, PNGOptimizer):
-                opt.optimize(imgpath)
-        elif imgformat == 'jpg':
-            if isinstance(opt, JPEGOptimizer):
-                opt.optimize(imgpath)
+        if (
+            imgformat == 'png'
+            and isinstance(opt, PNGOptimizer)
+            or imgformat != 'png'
+            and imgformat == 'jpg'
+            and isinstance(opt, JPEGOptimizer)
+        ):
+            opt.optimize(imgpath)

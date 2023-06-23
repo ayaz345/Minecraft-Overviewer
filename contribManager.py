@@ -3,6 +3,7 @@
 """The contrib manager is used to help control the contrib scripts
 that are shipped with overviewer in Windows packages."""
 
+
 import ast
 import os.path
 import sys
@@ -28,9 +29,9 @@ scripts = {     # keys are names, values are scripts
 argv = os.path.basename(sys.argv[0])
 
 if argv[-4:] == ".exe":
-    argv = argv[0:-4]
+    argv = argv[:-4]
 if argv[-3:] == ".py":
-    argv = argv[0:-3]
+    argv = argv[:-3]
 
 
 usage = """Usage:
@@ -43,25 +44,24 @@ Options:
 
 """ % os.path.basename(sys.argv[0])
 
-if argv in scripts.keys():
+if argv in scripts:
     script = scripts[argv]
     sys.argv[0] = script
 else:
     if "--list-contribs" in sys.argv:
-        for contrib in scripts.keys():
-            # use an AST to extract the docstring for this module
-            script = scripts[contrib]
+        for contrib, script in scripts.items():
             with open(os.path.join("contrib", script)) as f:
                 d = f.read()
             node = ast.parse(d, script)
             docstring = ast.get_docstring(node)
-            if docstring:
-                docstring = docstring.strip().splitlines()[0]
-            else:
-                docstring = "(No description found. Add one by adding a docstring to %s.)" % script
-            print("%s : %s" % (contrib, docstring))
+            docstring = (
+                docstring.strip().splitlines()[0]
+                if docstring
+                else f"(No description found. Add one by adding a docstring to {script}.)"
+            )
+            print(f"{contrib} : {docstring}")
         sys.exit(0)
-    if len(sys.argv) > 1 and sys.argv[1] in scripts.keys():
+    if len(sys.argv) > 1 and sys.argv[1] in scripts:
         script = scripts[sys.argv[1]]
         sys.argv = [script] + sys.argv[2:]
     else:
@@ -72,7 +72,7 @@ else:
 torun = os.path.join("contrib", script)
 
 if not os.path.exists(torun):
-    print("Script '%s' is missing!" % script, file=sys.stderr)
+    print(f"Script '{script}' is missing!", file=sys.stderr)
     sys.exit(1)
 
 exec(compile(open(torun, "rb").read(), torun, 'exec'))

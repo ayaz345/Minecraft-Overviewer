@@ -142,8 +142,7 @@ class NBTFileReader(object):
 
     def _read_tag_byte_array(self):
         length = self._uint.unpack(self._file.read(4))[0]
-        bytes = self._file.read(length)
-        return bytes
+        return self._file.read(length)
 
     def _read_tag_int_array(self):
         length = self._uint.unpack(self._file.read(4))[0]
@@ -204,7 +203,7 @@ class NBTFileReader(object):
             payload = self._read_tag_compound()
             return (name, payload)
         except (struct.error, ValueError, TypeError, EOFError) as e:
-            raise CorruptNBTError("could not parse nbt: %s" % (str(e),))
+            raise CorruptNBTError(f"could not parse nbt: {str(e)}")
 
 
 # For reference, the MCR format is outlined at
@@ -231,11 +230,11 @@ class MCRFileReader(object):
         self._file.seek(0)
         # read in the location table
         location_data = self._file.read(4096)
-        if not len(location_data) == 4096:
+        if len(location_data) != 4096:
             raise CorruptRegionError("invalid location table")
         # read in the timestamp table
         timestamp_data = self._file.read(4096)
-        if not len(timestamp_data) == 4096:
+        if len(timestamp_data) != 4096:
             raise CorruptRegionError("invalid timestamp table")
 
         # turn this data into a useful list
@@ -311,7 +310,7 @@ class MCRFileReader(object):
         try:
             header = self._file.read(5)
         except OSError as e:
-            raise CorruptChunkError("An OSError occurred: {}".format(e.strerror))
+            raise CorruptChunkError(f"An OSError occurred: {e.strerror}")
         if len(header) != 5:
             raise CorruptChunkError("chunk header is invalid")
         data_length, compression = self._chunk_header_format.unpack(header)
@@ -342,4 +341,4 @@ class MCRFileReader(object):
         except CorruptionError:
             raise
         except Exception as e:
-            raise CorruptChunkError("Misc error parsing chunk: " + str(e))
+            raise CorruptChunkError(f"Misc error parsing chunk: {str(e)}")

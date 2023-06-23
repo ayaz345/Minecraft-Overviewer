@@ -143,39 +143,37 @@ class FileReplacer(object):
         self.caps = capabilities
         self.destname = destname
         if self.caps.get("rename_works"):
-            self.tmpname = destname + ".tmp"
+            self.tmpname = f"{destname}.tmp"
     def __enter__(self):
-        if self.caps.get("rename_works"):
-            # rename works here. Return a temporary filename
-            return self.tmpname
-        return self.destname
+        return self.tmpname if self.caps.get("rename_works") else self.destname
     def __exit__(self, exc_type, exc_val, exc_tb):
-        if self.caps.get("rename_works"):
-            if exc_type:
-                # error
+        if not self.caps.get("rename_works"):
+            return
+        if exc_type:
+            # error
+            try:
+                os.remove(self.tmpname)
+            except Exception as e:
+                logging.warning("An error was raised, so I was doing "
+                        "some cleanup first, but I couldn't remove "
+                        "'%s'!", self.tmpname)
+        else:
+            # copy permission bits, if needed
+            if self.caps.get("chmod_works") and os.path.exists(self.destname):
                 try:
-                    os.remove(self.tmpname)
-                except Exception as e:
-                    logging.warning("An error was raised, so I was doing "
-                            "some cleanup first, but I couldn't remove "
-                            "'%s'!", self.tmpname)
-            else:
-                # copy permission bits, if needed
-                if self.caps.get("chmod_works") and os.path.exists(self.destname):
-                    try:
-                        shutil.copymode(self.destname, self.tmpname)
-                    except OSError as e:
-                        # Ignore errno ENOENT: file does not exist. Due to a race
-                        # condition, two processes could conceivably try and update
-                        # the same temp file at the same time
-                        if e.errno != errno.ENOENT:
-                            raise
-                # atomic rename into place
-                try:
-                    os.rename(self.tmpname, self.destname)
+                    shutil.copymode(self.destname, self.tmpname)
                 except OSError as e:
                     # Ignore errno ENOENT: file does not exist. Due to a race
                     # condition, two processes could conceivably try and update
                     # the same temp file at the same time
                     if e.errno != errno.ENOENT:
                         raise
+            # atomic rename into place
+            try:
+                os.rename(self.tmpname, self.destname)
+            except OSError as e:
+                # Ignore errno ENOENT: file does not exist. Due to a race
+                # condition, two processes could conceivably try and update
+                # the same temp file at the same time
+                if e.errno != errno.ENOENT:
+                    raise

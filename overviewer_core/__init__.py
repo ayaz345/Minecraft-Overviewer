@@ -31,8 +31,11 @@ def check_c_overviewer():
             return 1
 
         # try to find the build extension
-        ext = os.path.join(root_dir, "overviewer_core", "c_overviewer.{}"
-                           .format("pyd" if platform.system() == "Windows" else "so"))
+        ext = os.path.join(
+            root_dir,
+            "overviewer_core",
+            f'c_overviewer.{"pyd" if platform.system() == "Windows" else "so"}',
+        )
         if os.path.exists(ext):
             traceback.print_exc()
             print()
@@ -55,9 +58,14 @@ def check_c_overviewer():
         if os.path.exists(os.path.join(root_dir, "overviewer_core", "src", "overviewer.h")):
             with open(os.path.join(root_dir, "overviewer_core", "src", "overviewer.h")) as f:
                 lines = f.readlines()
-                lines = list(filter(lambda x: x.startswith("#define OVERVIEWER_EXTENSION_VERSION"),
-                                    lines))
-                if lines:
+                if lines := list(
+                    filter(
+                        lambda x: x.startswith(
+                            "#define OVERVIEWER_EXTENSION_VERSION"
+                        ),
+                        lines,
+                    )
+                ):
                     l = lines[0]
                     if int(l.split()[2].strip()) != c_overviewer.extension_version():
                         print("Please rebuild your c_overviewer module. It is out of date!")

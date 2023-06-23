@@ -62,46 +62,156 @@ import sys
 
 # config file.
 def get_default_config():
-    conf = dict()
-    conf['renders'] = Setting(required=True, default=OrderedDict(),
-            validator=make_dictValidator(validateStr, make_configDictValidator(
-            {
-                "world": Setting(required=True, validator=validateStr, default=None),
-                "dimension": Setting(required=True, validator=validateDimension, default="default"),
-                "title": Setting(required=True, validator=validateStr, default=None),
-                "rendermode": Setting(required=True, validator=validateRenderMode, default='normal'),
-                "northdirection": Setting(required=True, validator=validateNorthDirection, default=0),
-                "forcerender": Setting(required=False, validator=validateBool, default=None),
-                "imgformat": Setting(required=True, validator=validateImgFormat, default="png"),
-                "imgquality": Setting(required=False, validator=validateImgQuality, default=95),
-                "imglossless": Setting(required=False, validator=validateBool,
-                                    default=True),
-                "bgcolor": Setting(required=True, validator=validateBGColor, default="1a1a1a"),
-                "defaultzoom": Setting(required=True, validator=validateDefaultZoom, default=1),
-                "optimizeimg": Setting(required=True, validator=validateOptImg, default=[]),
-                "nomarkers": Setting(required=False, validator=validateBool, default=None),
-                "texturepath": Setting(required=False, validator=validateTexturePath, default=None),
-                "renderchecks": Setting(required=False, validator=validateInt, default=None),
-                "rerenderprob": Setting(required=True, validator=validateRerenderprob, default=0),
-                "crop": Setting(required=False, validator=validateCrop, default=None),
-                "changelist": Setting(required=False, validator=validateStr, default=None),
-                "markers": Setting(required=False, validator=validateMarkers, default=[]),
-                "overlay": Setting(required=False, validator=validateOverlays, default=[]),
-                "showspawn": Setting(required=False, validator=validateBool, default=True),
-                "base": Setting(required=False, validator=validateStr, default=""),
-                "poititle": Setting(required=False, validator=validateStr, default="Markers"),
-                "customwebassets": Setting(required=False, validator=validateWebAssetsPath, default=None),
-                "maxzoom": Setting(required=False, validator=validateInt, default=None),
-                "minzoom": Setting(required=False, validator=validateInt, default=0),
-                "manualpois": Setting(required=False, validator=validateManualPOIs, default=[]),
-                "showlocationmarker": Setting(required=False, validator=validateBool, default=True),
-                "center": Setting(required=False, validator=validateCoords, default=None),
-                # Remove this eventually (once people update their configs)
-                "worldname": Setting(required=False, default=None,
-                    validator=error("The option 'worldname' is now called 'world'. Please update your config files")),
-            }
-            )))
-
+    conf = {
+        'renders': Setting(
+            required=True,
+            default=OrderedDict(),
+            validator=make_dictValidator(
+                validateStr,
+                make_configDictValidator(
+                    {
+                        "world": Setting(
+                            required=True, validator=validateStr, default=None
+                        ),
+                        "dimension": Setting(
+                            required=True,
+                            validator=validateDimension,
+                            default="default",
+                        ),
+                        "title": Setting(
+                            required=True, validator=validateStr, default=None
+                        ),
+                        "rendermode": Setting(
+                            required=True,
+                            validator=validateRenderMode,
+                            default='normal',
+                        ),
+                        "northdirection": Setting(
+                            required=True,
+                            validator=validateNorthDirection,
+                            default=0,
+                        ),
+                        "forcerender": Setting(
+                            required=False,
+                            validator=validateBool,
+                            default=None,
+                        ),
+                        "imgformat": Setting(
+                            required=True,
+                            validator=validateImgFormat,
+                            default="png",
+                        ),
+                        "imgquality": Setting(
+                            required=False,
+                            validator=validateImgQuality,
+                            default=95,
+                        ),
+                        "imglossless": Setting(
+                            required=False,
+                            validator=validateBool,
+                            default=True,
+                        ),
+                        "bgcolor": Setting(
+                            required=True,
+                            validator=validateBGColor,
+                            default="1a1a1a",
+                        ),
+                        "defaultzoom": Setting(
+                            required=True,
+                            validator=validateDefaultZoom,
+                            default=1,
+                        ),
+                        "optimizeimg": Setting(
+                            required=True, validator=validateOptImg, default=[]
+                        ),
+                        "nomarkers": Setting(
+                            required=False,
+                            validator=validateBool,
+                            default=None,
+                        ),
+                        "texturepath": Setting(
+                            required=False,
+                            validator=validateTexturePath,
+                            default=None,
+                        ),
+                        "renderchecks": Setting(
+                            required=False, validator=validateInt, default=None
+                        ),
+                        "rerenderprob": Setting(
+                            required=True,
+                            validator=validateRerenderprob,
+                            default=0,
+                        ),
+                        "crop": Setting(
+                            required=False,
+                            validator=validateCrop,
+                            default=None,
+                        ),
+                        "changelist": Setting(
+                            required=False, validator=validateStr, default=None
+                        ),
+                        "markers": Setting(
+                            required=False,
+                            validator=validateMarkers,
+                            default=[],
+                        ),
+                        "overlay": Setting(
+                            required=False,
+                            validator=validateOverlays,
+                            default=[],
+                        ),
+                        "showspawn": Setting(
+                            required=False,
+                            validator=validateBool,
+                            default=True,
+                        ),
+                        "base": Setting(
+                            required=False, validator=validateStr, default=""
+                        ),
+                        "poititle": Setting(
+                            required=False,
+                            validator=validateStr,
+                            default="Markers",
+                        ),
+                        "customwebassets": Setting(
+                            required=False,
+                            validator=validateWebAssetsPath,
+                            default=None,
+                        ),
+                        "maxzoom": Setting(
+                            required=False, validator=validateInt, default=None
+                        ),
+                        "minzoom": Setting(
+                            required=False, validator=validateInt, default=0
+                        ),
+                        "manualpois": Setting(
+                            required=False,
+                            validator=validateManualPOIs,
+                            default=[],
+                        ),
+                        "showlocationmarker": Setting(
+                            required=False,
+                            validator=validateBool,
+                            default=True,
+                        ),
+                        "center": Setting(
+                            required=False,
+                            validator=validateCoords,
+                            default=None,
+                        ),
+                        # Remove this eventually (once people update their configs)
+                        "worldname": Setting(
+                            required=False,
+                            default=None,
+                            validator=error(
+                                "The option 'worldname' is now called 'world'. Please update your config files"
+                            ),
+                        ),
+                    }
+                ),
+            ),
+        )
+    }
     # The worlds dict, mapping world names to world paths
     conf['worlds'] = Setting(required=True, validator=make_dictValidator(validateStr, validateWorldPath), default=OrderedDict())
 

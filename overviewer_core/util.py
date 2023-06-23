@@ -30,13 +30,12 @@ from subprocess import PIPE, Popen
 def get_program_path():
     if hasattr(sys, "frozen") or imp.is_frozen("__main__"):
         return os.path.dirname(sys.executable)
-    else:
-        try:
-            # normally, we're in ./overviewer_core/util.py
-            # we want ./
-            return os.path.dirname(os.path.dirname(__file__))
-        except NameError:
-            return os.path.dirname(sys.argv[0])
+    try:
+        # normally, we're in ./overviewer_core/util.py
+        # we want ./
+        return os.path.dirname(os.path.dirname(__file__))
+    except NameError:
+        return os.path.dirname(sys.argv[0])
 
 
 def findGitHash():
@@ -129,11 +128,7 @@ def roundrobin(iterables):
 
 def dict_subset(d, keys):
     "Return a new dictionary that is built from copying select keys from d"
-    n = dict()
-    for key in keys:
-        if key in d:
-            n[key] = d[key]
-    return n
+    return {key: d[key] for key in keys if key in d}
 
 
 def pid_exists(pid):    # http://stackoverflow.com/a/6940314/1318435

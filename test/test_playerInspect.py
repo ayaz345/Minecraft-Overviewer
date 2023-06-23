@@ -142,7 +142,7 @@ class TestPlayerInspect(unittest.TestCase):
         files = [Path('def0492d-0fe9-43ff-a3d5-8c3fc9160c94.dat'),
                  Path('074c808a-1f04-4bdd-8385-bd74601210a1.dat'),
                  Path('104e149d-a802-4a27-ac8f-ceab5279087c.dat')]
-        dir_path.iterdir.return_value = (f for f in files)
+        dir_path.iterdir.return_value = iter(files)
 
         expected = [(Path('def0492d-0fe9-43ff-a3d5-8c3fc9160c94.dat'),
                      'def0492d-0fe9-43ff-a3d5-8c3fc9160c94'),
@@ -158,7 +158,7 @@ class TestPlayerInspect(unittest.TestCase):
         files = [Path('def0492d-0fe9-43ff-a3d5-8c3fc9160c94.dat'),
                  Path('074c808a-1f04-4bdd-8385-bd74601210a1.dat'),
                  Path('104e149d-a802-4a27-ac8f-ceab5279087c.dat')]
-        dir_path.iterdir.return_value = (f for f in files)
+        dir_path.iterdir.return_value = iter(files)
 
         expected = (Path('104e149d-a802-4a27-ac8f-ceab5279087c.dat'),
                     '104e149d-a802-4a27-ac8f-ceab5279087c')
@@ -170,7 +170,7 @@ class TestPlayerInspect(unittest.TestCase):
         dir_path = MagicMock(Path)
         files = [Path('def0492d-0fe9-43ff-a3d5-8c3fc9160c94.dat'),
                  Path('104e149d-a802-4a27-ac8f-ceab5279087c.dat')]
-        dir_path.iterdir.return_value = (f for f in files)
+        dir_path.iterdir.return_value = iter(files)
 
         with self.assertRaises(FileNotFoundError):
             player_inspect.find_player_file(dir_path, selected_player='NON_EXISTENT_UUID')

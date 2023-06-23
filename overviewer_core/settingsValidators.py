@@ -121,7 +121,7 @@ def validateNorthDirection(direction):
         elif direction == "lowerleft":
             intdir = LOWER_LEFT
         else:
-            raise ValidationException("'%s' is not a valid north direction." % direction)
+            raise ValidationException(f"'{direction}' is not a valid north direction.")
     if intdir < 0 or intdir > 3:
         raise ValidationException("%r is not a valid north direction." % direction)
     return intdir
@@ -161,7 +161,7 @@ def validateBGColor(color):
     """
     if type(color) == str:
         if color[0] != "#":
-            color = "#" + color
+            color = f"#{color}"
         if len(color) != 7:
             raise ValidationException("%r is not a valid color. Expected HTML color syntax. "
                                       "(i.e. #RRGGBB)" % color)
@@ -273,7 +273,7 @@ def validateCrop(value):
 
 
 def validateObserver(observer):
-    if all([hasattr(observer, m) for m in ['start', 'add', 'update', 'finish']]):
+    if all(hasattr(observer, m) for m in ['start', 'add', 'update', 'finish']):
         return observer
     else:
         raise ValidationException("%r does not look like an observer." % repr(observer))
@@ -290,15 +290,16 @@ def validateWebAssetsPath(p):
     try:
         validatePath(p)
     except ValidationException as e:
-        raise ValidationException("Bad custom web assets path: %s" % e.message)
+        raise ValidationException(f"Bad custom web assets path: {e.message}")
 
 
 def validatePath(p):
     checkBadEscape(p)
     abs_path = expand_path(p)
     if not os.path.exists(abs_path):
-        raise ValidationException("'%s' does not exist. Path initially given as '%s'"
-                                  % (abs_path, p))
+        raise ValidationException(
+            f"'{abs_path}' does not exist. Path initially given as '{p}'"
+        )
 
 
 def validateManualPOIs(d):
@@ -310,10 +311,11 @@ def validateManualPOIs(d):
 
 def validateCoords(c):
     if not isinstance(c, (list, tuple)):
-        raise ValidationException("Your coordinates '{}' are not a list or a tuple.".format(c))
+        raise ValidationException(f"Your coordinates '{c}' are not a list or a tuple.")
     if len(c) not in [2, 3]:
-        raise ValidationException("'{}' is not a valid list or tuple of coordinates, "
-                                  "because we expect either 2 or 3 elements.".format(c))
+        raise ValidationException(
+            f"'{c}' is not a valid list or tuple of coordinates, because we expect either 2 or 3 elements."
+        )
     if len(c) == 2:
         x, z = [validateInt(i) for i in c]
         y = 64
@@ -380,9 +382,10 @@ def make_configDictValidator(config, ignore_undefined=False):
                     newdict[key] = d[key]
                 elif match:
                     raise ValidationException(
-                        "'%s' is not a configuration item. Did you mean '%s'?" % (key, match))
+                        f"'{key}' is not a configuration item. Did you mean '{match}'?"
+                    )
                 elif not ignore_undefined:
-                    raise ValidationException("'%s' is not a configuration item." % key)
+                    raise ValidationException(f"'{key}' is not a configuration item.")
                 else:
                     # the key is to be ignored. Copy it as-is to the `newdict`
                     # to be returned. It shouldn't conflict, and may be used as
@@ -404,13 +407,14 @@ def make_configDictValidator(config, ignore_undefined=False):
                 # it's required. This is an error.
                 if configkey in undefined_key_matches:
                     raise ValidationException(
-                        "Key '%s' is not a valid configuration item. Did you mean '%s'?"
-                        % (undefined_key_matches[configkey], configkey))
+                        f"Key '{undefined_key_matches[configkey]}' is not a valid configuration item. Did you mean '{configkey}'?"
+                    )
                 else:
                     raise ValidationException("Required key '%s' was not specified. You must give "
                                               "a value for this setting." % configkey)
 
         return newdict
+
     # Put these objects as attributes of the function so they can be accessed
     # externally later if need be
     configDictValidator.config = config
@@ -461,6 +465,4 @@ def _get_closest_match(s, keys):
             minmatch = key
             mindist = d
 
-    if mindist <= threshold:
-        return minmatch
-    return None
+    return minmatch if mindist <= threshold else None

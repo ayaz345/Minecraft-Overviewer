@@ -23,13 +23,8 @@ def get_contributors():
     contributors = []
     p_git = subprocess.run(["git", "shortlog", "-se"], stdout=subprocess.PIPE)
     for line in p_git.stdout.decode('utf-8').split('\n'):
-        m = re.search(r"(\d+)\t(.+) (<.+>)", line)
-        if m:
-            contributors.append({
-                "count": int(m.group(1)),
-                "name": m.group(2),
-                "email": m.group(3)
-            })
+        if m := re.search(r"(\d+)\t(.+) (<.+>)", line):
+            contributors.append({"count": int(m[1]), "name": m[2], "email": m[3]})
     return contributors
 
 
@@ -41,8 +36,7 @@ def get_old_contributors(contrib_file_lines):
     """
     old_contributors = []
     for line in contrib_file_lines:
-        m = CONTRIB_FILE_CONTRIBUTOR_RE.search(line)
-        if m:
+        if m := CONTRIB_FILE_CONTRIBUTOR_RE.search(line):
             old_contributors.append({"name": m.group(1), "email": m.group(2)})
     return old_contributors
 
@@ -71,7 +65,7 @@ def get_new_contributors(contributors, old_contributors):
             new_contributors.append(contributor)
         elif existing_name is not None:
             new_alias.append((contributor, existing_name))
-        elif existing_email is not None:
+        else:
             new_email.append((contributor, existing_email))
     return (
         sorted(new_contributors, key=lambda x: x['name'].split()[-1].lower()),

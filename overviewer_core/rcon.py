@@ -51,17 +51,16 @@ class RConConnection():
 
         try:
             res_len, res_id, res_type = \
-                struct.unpack("<iii", self.sock.recv(12, socket.MSG_WAITALL))
+                    struct.unpack("<iii", self.sock.recv(12, socket.MSG_WAITALL))
             if res_len < 0:
-                raise Exception("Response length is {}.".format(res_len))
+                raise Exception(f"Response length is {res_len}.")
 
         except Exception as e:
-            raise RConException(self.rid,
-                                "RCon protocol error. Are you sure you're "
-                                "talking to the RCon port? Error: %s" % e)
+            raise RConException(
+                self.rid,
+                f"RCon protocol error. Are you sure you're talking to the RCon port? Error: {e}",
+            )
         res_data = self.sock.recv(res_len - 4 - 4)
-        res_data = res_data[:-2]
-
         if res_id == -1:
             if t == 3:
                 raise RConException(self.rid, "Login failed.")
@@ -71,13 +70,14 @@ class RConConnection():
         elif res_id != self.rid:
             raise RConException(self.rid, "Received unexpected response "
                                 "number: %d" % res_id)
+        res_data = res_data[:-2]
         return res_data
 
     def login(self, password):
         self.send(3, password)
 
     def command(self, com, args):
-        self.send(2, com + " " + args)
+        self.send(2, f"{com} {args}")
 
     def close(self):
         self.sock.close()

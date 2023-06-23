@@ -58,7 +58,7 @@ def main():
 
     # create a list with all the images in the zoom level
     path = args.tileset
-    for i in range(args.zoom_level):
+    for _ in range(args.zoom_level):
         path = join(path, "?")
     path += ".png"
 
@@ -72,18 +72,16 @@ def main():
     if args.autocrop:
         min_x = min_y = length_in_tiles
         max_x = max_y = 0
-        counter = 0
         total = len(all_images)
         print("Checking tiles for autocrop calculations:", file=sys.stderr)
         # get the maximum and minimum tiles coordinates of the map
-        for path in all_images:
+        for counter, path in enumerate(all_images, start=1):
             t = get_tuple_coords(args, path)
             c = get_tile_coords_from_tuple(args, t)
             min_x = min(min_x, c[0])
             min_y = min(min_y, c[1])
             max_x = max(max_x, c[0])
             max_y = max(max_y, c[1])
-            counter += 1
             if (counter % 100 == 0 or counter == total or counter == 1):
                 print("Checked {0} of {1}.".format(counter, total), file=sys.stderr)
 
@@ -137,14 +135,12 @@ def main():
 
     # Paste ALL the images
     total = len(all_images)
-    counter = 0
     print("Pasting images:", file=sys.stderr)
-    for path in all_images:
+    for counter, path in enumerate(all_images, start=1):
         img = Image.open(path)
         t = get_tuple_coords(args, path)
         x, y = get_cropped_centered_img_coords(args, tile_size, center_vector, crop, t)
         final_img.paste(img, (x, y))
-        counter += 1
         if (counter % 100 == 0 or counter == total or counter == 1):
             print("Pasted {0} of {1}.".format(counter, total), file=sys.stderr)
     print("Done!", file=sys.stderr)
@@ -173,9 +169,7 @@ def get_tile_coords_from_tuple(options, t):
     x = 0
     y = 0
     z = options.zoom_level
-    n = 1
-
-    for i in t:
+    for n, i in enumerate(t, start=1):
         if i == 1:
             x += 2**(z - n)
         elif i == 2:
@@ -183,7 +177,6 @@ def get_tile_coords_from_tuple(options, t):
         elif i == 3:
             x += 2**(z - n)
             y += 2**(z - n)
-        n += 1
     return (x, y)
 
 
@@ -191,11 +184,10 @@ def get_tuple_coords(options, path):
     """ Extracts the "quadtree coordinates" (the numbers in the folder
     of the tile sets) from an image path. Returns a tuple with them.
     The upper most folder is in the left of the tuple."""
-    l = []
     path, head = split(path)
     head = head.split(".")[0]   # remove the .png
-    l.append(int(head))
-    for i in range(options.zoom_level - 1):
+    l = [int(head)]
+    for _ in range(options.zoom_level - 1):
         path, head = split(path)
         l.append(int(head))
     # the list is reversed

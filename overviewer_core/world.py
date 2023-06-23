@@ -98,7 +98,7 @@ class World(object):
         # The level.dat file defines a minecraft world, so assert that this
         # object corresponds to a world on disk
         if not os.path.exists(os.path.join(self.worlddir, "level.dat")):
-            raise ValueError("level.dat not found in %s" % self.worlddir)
+            raise ValueError(f"level.dat not found in {self.worlddir}")
 
         data = nbt.load(os.path.join(self.worlddir, "level.dat"))[1]['Data']
         # it seems that reading a level.dat file is unstable, particularly with respect
@@ -110,7 +110,7 @@ class World(object):
 
 
         # Hard-code this to only work with format version 19133, "Anvil"
-        if not ('version' in data and data['version'] == 19133):
+        if 'version' not in data or data['version'] != 19133:
             if 'version' in data and data['version'] == 0:
                 logging.debug("Note: Allowing a version of zero in level.dat!")
                 ## XXX temporary fix for #1194
@@ -131,9 +131,7 @@ class World(object):
         # just scan the directory heirarchy to find a directory with .mca
         # files.
         for root, dirs, files in os.walk(self.worlddir, followlinks=True):
-            # any .mcr files in this directory?
-            mcas = [x for x in files if x.endswith(".mca")]
-            if mcas:
+            if mcas := [x for x in files if x.endswith(".mca")]:
                 # construct a regionset object for this
                 rel = os.path.relpath(root, self.worlddir)
                 if os.path.basename(rel) != "poi":
@@ -166,13 +164,9 @@ class World(object):
     def get_regionset(self, index):
         if type(index) == int:
             return self.regionsets[index]
-        else: # assume a get_type() value
-            candids = [x for x in self.regionsets if x.get_type() == index]
-            logging.debug("You asked for %r, and I found the following candids: %r", index, candids)
-            if len(candids) > 0:
-                return candids[0]
-            else:
-                return None
+        candids = [x for x in self.regionsets if x.get_type() == index]
+        logging.debug("You asked for %r, and I found the following candids: %r", index, candids)
+        return candids[0] if candids else None
 
 
     def get_level_dat_data(self):
@@ -198,16 +192,13 @@ class World(object):
         disp_spawnZ = spawnZ = data['SpawnZ']
 
         ## clamp spawnY to a sane value, in-chunk value
-        if spawnY < -63:
-            spawnY = -63
-        if spawnY > 319:
-            spawnY = 319
-            
+        spawnY = max(spawnY, -63)
+        spawnY = min(spawnY, 319)
         ## The chunk that holds the spawn location
         chunkX = spawnX//16
         chunkY = spawnY//16
         chunkZ = spawnZ//16
-        
+
         ## The block for spawn *within* the chunk
         inChunkX = spawnX % 16
         inChunkZ = spawnZ % 16
@@ -221,9 +212,9 @@ class World(object):
             chunk = regionset.get_chunk(chunkX, chunkZ)
         except ChunkDoesntExist:
             return (spawnX, spawnY, spawnZ)
-        
+
         ## Check for first air block (0) above spawn
-        
+
         # Get only the spawn section and the ones above, ordered from low to high
         spawnChunkSections = sorted(chunk['Sections'], key=lambda sec: sec['Y'])[chunkY:]
         for section in spawnChunkSections:
@@ -270,7 +261,7 @@ class RegionSet(object):
 
         # we want to get rid of /regions, if it exists
         if self.rel.endswith(os.path.normpath("/region")):
-            self.type = self.rel[0:-len(os.path.normpath("/region"))]
+            self.type = self.rel[:-len(os.path.normpath("/region"))]
         elif self.rel == "region":
             # this is the main world
             self.type = None
@@ -293,7 +284,7 @@ class RegionSet(object):
             if os.path.getsize(regionfile) != 0:
                 self.regionfiles[(x,y)] = (regionfile, os.path.getmtime(regionfile))
             else:
-                logging.debug("Skipping zero-size region file {}".format(regionfile))
+                logging.debug(f"Skipping zero-size region file {regionfile}")
 
         self.empty_chunk = [None,None]
         logging.debug("Done scanning regions")
@@ -1028,15 +1019,15 @@ class RegionSet(object):
                      'brown',  'green',     'red',      'black']
         for i in range(len(colors)):
             # For beds: bits 1-2 indicate facing, bit 3 occupancy, bit 4 foot (0) or head (1)
-            self._blockmap['minecraft:%s_bed'                % colors[i]] = (26, i << 4)
-            self._blockmap['minecraft:%s_stained_glass'      % colors[i]] = (95, i)
-            self._blockmap['minecraft:%s_stained_glass_pane' % colors[i]] = (160, i)
-            self._blockmap['minecraft:%s_banner'             % colors[i]] = (176, i)  # not rendering
-            self._blockmap['minecraft:%s_wall_banner'        % colors[i]] = (177, i)  # not rendering
-            self._blockmap['minecraft:%s_shulker_box'        % colors[i]] = (219 + i, 0)
-            self._blockmap['minecraft:%s_glazed_terracotta'  % colors[i]] = (235 + i, 0)
-            self._blockmap['minecraft:%s_concrete'           % colors[i]] = (251, i)
-            self._blockmap['minecraft:%s_concrete_powder'    % colors[i]] = (252, i)
+            self._blockmap[f'minecraft:{colors[i]}_bed'] = (26, i << 4)
+            self._blockmap[f'minecraft:{colors[i]}_stained_glass'] = (95, i)
+            self._blockmap[f'minecraft:{colors[i]}_stained_glass_pane'] = (160, i)
+            self._blockmap[f'minecraft:{colors[i]}_banner'] = (176, i)
+            self._blockmap[f'minecraft:{colors[i]}_wall_banner'] = (177, i)
+            self._blockmap[f'minecraft:{colors[i]}_shulker_box'] = (219 + i, 0)
+            self._blockmap[f'minecraft:{colors[i]}_glazed_terracotta'] = (235 + i, 0)
+            self._blockmap[f'minecraft:{colors[i]}_concrete'] = (251, i)
+            self._blockmap[f'minecraft:{colors[i]}_concrete_powder'] = (252, i)
 
     # Re-initialize upon unpickling
     def __getstate__(self):

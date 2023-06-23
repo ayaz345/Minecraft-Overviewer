@@ -112,8 +112,7 @@ class LRUCache(object):
             del cache[link.key]
             link.left.right = link.right
             link.right.left = link.left
-            d = self.destructor
-            if d:
+            if d := self.destructor:
                 d(link.value)
             del link
 
@@ -133,7 +132,5 @@ class LRUCache(object):
         link.left.right = link.right
         link.right.left = link.left
 
-        # Call the destructor
-        d = self.destructor
-        if d:
+        if d := self.destructor:
             d(link.value)
